@@ -1,0 +1,23 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  email    String @id
+  username String
+  password String
+  todos    Todo[]
+}
+
+model Todo {
+  id          Int      @id @default(autoincrement())
+  description String
+  date        DateTime
+  isDone      Boolean  @default(false)
+  userEmail   String
+  user        User     @relation(fields: [userEmail], references: [email], onDelete: Cascade)
+}
