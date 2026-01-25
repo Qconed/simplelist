@@ -1,0 +1,31 @@
+{
+  "name": "backend",
+  "version": "1.0.0",
+  "description": "Backend of the To Do List Application",
+  "main": "server.ts",
+  "scripts": {
+    "dev": "tsx watch server.ts",
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@fastify/cors": "^11.2.0",
+    "@prisma/client": "^7.3.0",
+    "bcrypt": "^6.0.0",
+    "dotenv": "^17.2.3",
+    "fastify": "^5.7.1"
+  },
+  "devDependencies": {
+    "@types/bcrypt": "^6.0.0",
+    "@types/node": "^25.0.10",
+    "prisma": "^7.3.0",
+    "tsx": "^4.21.0",
+    "typescript": "^5.9.3"
+  }
+}
