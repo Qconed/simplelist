@@ -32,7 +32,6 @@ export default async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Validation format email
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(email)) {
         return reply.status(400).send({
@@ -66,12 +65,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
         }
       });
 
+      // Générer un JWT
+      const token = fastify.jwt.sign({
+        email: newUser.email,
+        username: newUser.username
+      });
+
       return reply.status(201).send({
         message: 'Utilisateur créé avec succès',
         user: {
           email: newUser.email,
           username: newUser.username
-        }
+        },
+        token  // ← JWT TOKEN
       });
 
     } catch (error) {
@@ -83,11 +89,8 @@ export default async function authRoutes(fastify: FastifyInstance) {
   });
 
   /**
-   * Body attendu:
-   * {
-   *   "email": "user@example.com",
-   *   "password": "monMotDePasse123"
-   * }
+   * POST /api/auth/login
+   * Connexion + retour d'un JWT
    */
   fastify.post('/login', async (request, reply) => {
     try {
@@ -119,12 +122,19 @@ export default async function authRoutes(fastify: FastifyInstance) {
         });
       }
 
+      // Générer un JWT
+      const token = fastify.jwt.sign({
+        email: user.email,
+        username: user.username
+      });
+
       return reply.status(200).send({
         message: 'Connexion réussie',
         user: {
           email: user.email,
           username: user.username
-        }
+        },
+        token  // ← JWT TOKEN
       });
 
     } catch (error) {

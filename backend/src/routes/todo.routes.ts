@@ -6,32 +6,20 @@ const prisma = new PrismaClient();
 export default async function todoRoutes(fastify: FastifyInstance) {
   
   /**
-   * GET /api/todos/:userEmail
-   * Params:
-   *   userEmail: string (email de l'utilisateur)
-   * 
-   * Query params optionnels:
-   *   ?isDone=true/false (filtrer par statut)
+   * GET /api/todos
+   * 🔒 PROTÉGÉE - Récupère les todos de l'utilisateur authentifié
    */
-  fastify.get('/:userEmail', async (request, reply) => {
+  fastify.get('/', {
+    onRequest: [fastify.authenticate]  // ← Middleware de protection
+  }, async (request, reply) => {
     try {
-      const { userEmail } = request.params as { userEmail: string };
+      // Le user est automatiquement disponible après jwtVerify
+      const userEmail = request.user.email;
       const { isDone } = request.query as { isDone?: string };
 
-      // Vérifier que l'utilisateur existe
-      const user = await prisma.user.findUnique({
-        where: { email: userEmail }
-      });
-
-      if (!user) {
-        return reply.status(404).send({
-          error: 'Utilisateur non trouvé'
-        });
-      }
-
+      // Construire le filtre
       const whereClause: any = { userEmail };
       
-      // Si isDone est spécifié, l'ajouter au filtre
       if (isDone !== undefined) {
         whereClause.isDone = isDone === 'true';
       }
@@ -40,7 +28,7 @@ export default async function todoRoutes(fastify: FastifyInstance) {
       const todos = await prisma.todo.findMany({
         where: whereClause,
         orderBy: {
-          date: 'desc' // Plus récents en premier
+          date: 'desc'
         }
       });
 
@@ -59,24 +47,22 @@ export default async function todoRoutes(fastify: FastifyInstance) {
 
   /**
    * POST /api/todos
-   * Body attendu:
-   * {
-   *   "userEmail": "user@example.com",
-   *   "description": "Acheter du pain",
-   *   "date": "2026-01-26T10:00:00.000Z" (optionnel, défaut: maintenant)
-   * }
+   * 🔒 PROTÉGÉE - Crée un todo pour l'utilisateur authentifié
    */
-  fastify.post('/', async (request, reply) => {
+  fastify.post('/', {
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
     try {
-      const { userEmail, description, date } = request.body as {
-        userEmail: string;
+      const userEmail = request.user.email;  // Depuis le JWT
+      const { description, date } = request.body as {
         description: string;
         date?: string;
       };
 
-      if (!userEmail || !description) {
+      // Validation
+      if (!description) {
         return reply.status(400).send({
-          error: 'userEmail et description sont requis'
+          error: 'description est requise'
         });
       }
 
@@ -86,19 +72,10 @@ export default async function todoRoutes(fastify: FastifyInstance) {
         });
       }
 
-      const user = await prisma.user.findUnique({
-        where: { email: userEmail }
-      });
-
-      if (!user) {
-        return reply.status(404).send({
-          error: 'Utilisateur non trouvé'
-        });
-      }
-
+      // Créer le todo
       const newTodo = await prisma.todo.create({
         data: {
-          userEmail,
+          userEmail,  // Automatiquement depuis le JWT
           description: description.trim(),
           date: date ? new Date(date) : new Date(),
           isDone: false
@@ -120,17 +97,13 @@ export default async function todoRoutes(fastify: FastifyInstance) {
 
   /**
    * PUT /api/todos/:id
-   * Params:
-   *   id: number (ID du todo)
-   * 
-   * Body attendu:
-   * {
-   *   "description": "Nouvelle description",  (optionnel)
-   *   "date": "2026-01-26T10:00:00.000Z"      (optionnel)
-   * }
+   * 🔒 PROTÉGÉE - Met à jour un todo (seulement si c'est le sien)
    */
-  fastify.put('/:id', async (request, reply) => {
+  fastify.put('/:id', {
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
     try {
+      const userEmail = request.user.email;
       const { id } = request.params as { id: string };
       const { description, date } = request.body as {
         description?: string;
@@ -145,7 +118,7 @@ export default async function todoRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Vérifier que le todo existe
+      // Vérifier que le todo existe ET appartient à l'utilisateur
       const existingTodo = await prisma.todo.findUnique({
         where: { id: todoId }
       });
@@ -153,6 +126,13 @@ export default async function todoRoutes(fastify: FastifyInstance) {
       if (!existingTodo) {
         return reply.status(404).send({
           error: 'Todo non trouvé'
+        });
+      }
+
+      // Vérifier que le todo appartient à l'utilisateur
+      if (existingTodo.userEmail !== userEmail) {
+        return reply.status(403).send({
+          error: 'Vous n\'êtes pas autorisé à modifier ce todo'
         });
       }
 
@@ -172,7 +152,6 @@ export default async function todoRoutes(fastify: FastifyInstance) {
         updateData.date = new Date(date);
       }
 
-      // Si aucune donnée à mettre à jour
       if (Object.keys(updateData).length === 0) {
         return reply.status(400).send({
           error: 'Aucune donnée à mettre à jour'
@@ -200,11 +179,13 @@ export default async function todoRoutes(fastify: FastifyInstance) {
 
   /**
    * PATCH /api/todos/:id/toggle
-   * Params:
-   *   id: number (ID du todo)
+   * 🔒 PROTÉGÉE - Toggle le statut d'un todo
    */
-  fastify.patch('/:id/toggle', async (request, reply) => {
+  fastify.patch('/:id/toggle', {
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
     try {
+      const userEmail = request.user.email;
       const { id } = request.params as { id: string };
       const todoId = parseInt(id);
 
@@ -222,6 +203,13 @@ export default async function todoRoutes(fastify: FastifyInstance) {
       if (!existingTodo) {
         return reply.status(404).send({
           error: 'Todo non trouvé'
+        });
+      }
+
+      // Vérifier la propriété
+      if (existingTodo.userEmail !== userEmail) {
+        return reply.status(403).send({
+          error: 'Vous n\'êtes pas autorisé à modifier ce todo'
         });
       }
 
@@ -248,11 +236,13 @@ export default async function todoRoutes(fastify: FastifyInstance) {
 
   /**
    * DELETE /api/todos/:id
-   * Params:
-   *   id: number (ID du todo)
+   * 🔒 PROTÉGÉE - Supprime un todo
    */
-  fastify.delete('/:id', async (request, reply) => {
+  fastify.delete('/:id', {
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
     try {
+      const userEmail = request.user.email;
       const { id } = request.params as { id: string };
       const todoId = parseInt(id);
 
@@ -270,6 +260,13 @@ export default async function todoRoutes(fastify: FastifyInstance) {
       if (!existingTodo) {
         return reply.status(404).send({
           error: 'Todo non trouvé'
+        });
+      }
+
+      // Vérifier la propriété
+      if (existingTodo.userEmail !== userEmail) {
+        return reply.status(403).send({
+          error: 'Vous n\'êtes pas autorisé à supprimer ce todo'
         });
       }
 
