@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import authRoutes from './routes/auth.routes';
+import todoRoutes from './routes/todo.routes';
 
 const prisma = new PrismaClient();
 
@@ -36,6 +37,7 @@ fastify.get('/', async (request, reply) => {
 });
 
 fastify.register(authRoutes, {prefix: '/api/auth'});
+fastify.register(todoRoutes, {prefix: '/api/todos'});
 
 
 // Run the server ==================
