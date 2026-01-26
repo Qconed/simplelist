@@ -1,23 +1,15 @@
 import { Injectable, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
-import { Observable, tap } from 'rxjs';
-import { jwtDecode } from 'jwt-decode';
+import { Observable, tap, map, catchError, of } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import {
-  User,
-  LoginRequest,
-  RegisterRequest,
-  AuthResponse,
-  JwtPayload
-} from '../models/user.model';
+import { User, LoginRequest, RegisterRequest, AuthResponse} from '../models/user.model';
 
 @Injectable({
   providedIn: 'root'
 })
 export class AuthService {
   private readonly API_URL = environment.apiUrl;
-  private readonly TOKEN_KEY = 'auth_token';
   
   // Signal pour stocker l'utilisateur courant
   currentUser = signal<User | null>(null);
@@ -26,19 +18,8 @@ export class AuthService {
     private http: HttpClient,
     private router: Router
   ) {
-    // Initialiser l'utilisateur au démarrage si un token existe
-    this.initializeUser();
-  }
-
-  /**
-   * Initialise l'utilisateur depuis le token localStorage
-   */
-  private initializeUser(): void {
-    const token = this.getToken();
-    if (token && this.isTokenValid(token)) {
-      const user = this.getUserFromToken(token);
-      this.currentUser.set(user);
-    }
+    // Vérifier l'authentification au démarrage depuis le cookie
+    this.checkAuth().subscribe();
   }
 
   /**
@@ -48,10 +29,11 @@ export class AuthService {
   register(email: string, username: string, password: string): Observable<AuthResponse> {
     const body: RegisterRequest = { email, username, password };
     
-    return this.http.post<AuthResponse>(`${this.API_URL}/api/auth/register`, body)
-      .pipe(
-        tap(response => this.handleAuthSuccess(response))
-      );
+    return this.http.post<AuthResponse>(`${this.API_URL}/api/auth/register`, body, {
+      withCredentials: true  // Permet l'envoi et la réception des cookies
+    }).pipe(
+      tap(response => this.handleAuthSuccess(response))
+    );
   }
 
   /**
@@ -61,38 +43,59 @@ export class AuthService {
   login(email: string, password: string): Observable<AuthResponse> {
     const body: LoginRequest = { email, password };
     
-    return this.http.post<AuthResponse>(`${this.API_URL}/api/auth/login`, body)
-      .pipe(
-        tap(response => this.handleAuthSuccess(response))
-      );
+    return this.http.post<AuthResponse>(`${this.API_URL}/api/auth/login`, body, {
+      withCredentials: true  // Permet l'envoi et la réception des cookies
+    }).pipe(
+      tap(response => this.handleAuthSuccess(response))
+    );
   }
 
   /**
    * Déconnexion
+   * Appelle le backend pour supprimer le cookie
    */
   logout(): void {
-    localStorage.removeItem(this.TOKEN_KEY);
-    this.currentUser.set(null);
-    this.router.navigate(['/login']);
+    this.http.post(`${this.API_URL}/api/auth/logout`, {}, {
+      withCredentials: true
+    }).subscribe({
+      next: () => {
+        this.currentUser.set(null);
+        this.router.navigate(['/login']);
+      },
+      error: () => {
+        // Même en cas d'erreur, on déconnecte l'utilisateur côté client
+        this.currentUser.set(null);
+        this.router.navigate(['/login']);
+      }
+    });
   }
 
   /**
-   * Vérifie si l'utilisateur est authentifié
+   * Vérifie si l'utilisateur est authentifié en appelant /api/auth/me
+   * Retourne true si authentifié, false sinon
+   */
+  checkAuth(): Observable<boolean> {
+    return this.http.get<{ user: User }>(`${this.API_URL}/api/auth/me`, {
+      withCredentials: true
+    }).pipe(
+      tap(response => this.currentUser.set(response.user)),
+      map(() => true),  // Transformer en true si succès
+      catchError(() => {
+        this.currentUser.set(null);
+        return of(false);
+      })
+    );
+  }
+
+  /**
+   * Vérifie si l'utilisateur est authentifié (version synchrone)
    */
   isAuthenticated(): boolean {
-    const token = this.getToken();
-    return token !== null && this.isTokenValid(token);
+    return this.currentUser() !== null;
   }
 
   /**
-   * Récupère le token JWT
-   */
-  getToken(): string | null {
-    return localStorage.getItem(this.TOKEN_KEY);
-  }
-
-  /**
-   * Récupère l'utilisateur courant depuis le JWT
+   * Récupère l'utilisateur courant
    */
   getCurrentUser(): User | null {
     return this.currentUser();
@@ -100,36 +103,9 @@ export class AuthService {
 
   /**
    * Gère le succès de l'authentification (login ou register)
+   * Plus besoin de stocker le token, il est dans un cookie HTTP-only
    */
   private handleAuthSuccess(response: AuthResponse): void {
-    localStorage.setItem(this.TOKEN_KEY, response.token);
     this.currentUser.set(response.user);
-  }
-
-  /**
-   * Vérifie si le token est valide (non expiré)
-   */
-  private isTokenValid(token: string): boolean {
-    try {
-      const decoded = jwtDecode<JwtPayload>(token);
-      if (decoded.exp) {
-        const expirationDate = new Date(decoded.exp * 1000);
-        return expirationDate > new Date();
-      }
-      return true; // Si pas d'expiration, on considère valide
-    } catch (error) {
-      return false;
-    }
-  }
-
-  /**
-   * Extrait l'utilisateur depuis le token JWT
-   */
-  private getUserFromToken(token: string): User {
-    const decoded = jwtDecode<JwtPayload>(token);
-    return {
-      email: decoded.email,
-      username: decoded.username
-    };
   }
 }
