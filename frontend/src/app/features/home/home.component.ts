@@ -1,0 +1,17 @@
+import { Component, computed } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { RouterLink } from '@angular/router';
+import { AuthService } from '../../core/services/auth.service';
+
+@Component({
+  selector: 'app-home',
+  imports: [CommonModule, RouterLink],
+  templateUrl: './home-component.html',
+  styleUrl: './home-component.css',
+})
+export class HomeComponent {
+  isLoggedIn = computed(() => this.authService.currentUser() !== null);
+  currentUser = computed(() => this.authService.currentUser());
+
+  constructor(private authService: AuthService) {}
+}

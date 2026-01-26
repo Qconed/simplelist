@@ -1,0 +1,58 @@
+<div class="home-container">
+    @if (isLoggedIn()) {
+    <!-- Utilisateur connecté -->
+    <div class="welcome-section">
+        <h1>Bienvenue, {{ currentUser()?.username }} ! 👋</h1>
+        <p class="subtitle">Gérez vos tâches facilement avec notre application Todo List</p>
+        
+        <div class="action-cards">
+        <a routerLink="/todos" class="action-card">
+            <div class="card-icon">📝</div>
+            <h3>Mes Todos</h3>
+            <p>Voir et gérer toutes mes tâches</p>
+        </a>
+        
+        <div class="action-card info-card">
+            <div class="card-icon">✨</div>
+            <h3>Astuces</h3>
+            <p>Organisez vos tâches par priorité pour être plus productif</p>
+        </div>
+        </div>
+    </div>
+    } @else {
+    <!-- Utilisateur non connecté -->
+    <div class="landing-section">
+        <h1>Bienvenue sur Todo List ! ✅</h1>
+        <p class="subtitle">Organisez vos tâches simplement et efficacement</p>
+        
+        <div class="features">
+        <div class="feature">
+            <span class="feature-icon">🔒</span>
+            <h3>Sécurisé</h3>
+            <p>Vos données sont protégées avec des cookies HTTP-only</p>
+        </div>
+        
+        <div class="feature">
+            <span class="feature-icon">⚡</span>
+            <h3>Rapide</h3>
+            <p>Interface moderne et réactive</p>
+        </div>
+        
+        <div class="feature">
+            <span class="feature-icon">📱</span>
+            <h3>Accessible</h3>
+            <p>Fonctionne sur tous vos appareils</p>
+        </div>
+        </div>
+        
+        <div class="cta-buttons">
+        <a routerLink="/register" class="btn-primary">
+            Commencer gratuitement
+        </a>
+        <a routerLink="/login" class="btn-secondary">
+            Se connecter
+        </a>
+        </div>
+    </div>
+    }
+</div>

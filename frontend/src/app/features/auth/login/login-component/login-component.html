@@ -1,1 +1,78 @@
-<p>login-component works!</p>
+<div class="login-container">
+  <div class="login-card">
+    <h1>Connexion</h1>
+    <p class="subtitle">Connectez-vous à votre compte</p>
+
+    <!-- Message d'erreur -->
+    @if (errorMessage()) {
+      <div class="error-message">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <!-- Formulaire de connexion -->
+    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email"
+          placeholder="votre@email.com"
+          [class.invalid]="email?.invalid && email?.touched"
+        />
+        @if (email?.invalid && email?.touched) {
+          <div class="field-error">
+            @if (email?.errors?.['required']) {
+              <span>L'email est requis</span>
+            }
+            @if (email?.errors?.['email']) {
+              <span>Format d'email invalide</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password"
+          placeholder="••••••••"
+          [class.invalid]="password?.invalid && password?.touched"
+        />
+        @if (password?.invalid && password?.touched) {
+          <div class="field-error">
+            @if (password?.errors?.['required']) {
+              <span>Le mot de passe est requis</span>
+            }
+            @if (password?.errors?.['minlength']) {
+              <span>Le mot de passe doit contenir au moins 6 caractères</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Bouton de soumission -->
+      <button 
+        type="submit" 
+        class="btn-primary"
+        [disabled]="isLoading()"
+      >
+        @if (isLoading()) {
+          <span>Connexion en cours...</span>
+        } @else {
+          <span>Se connecter</span>
+        }
+      </button>
+    </form>
+
+    <!-- Lien vers l'inscription -->
+    <div class="footer-link">
+      <p>Pas encore de compte ? <a routerLink="/register">S'inscrire</a></p>
+    </div>
+  </div>
+</div>

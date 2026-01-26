@@ -1,1 +1,40 @@
-<p>header-component works!</p>
+<header class="header">
+  <div class="header-container">
+    <!-- Logo / Titre -->
+    <div class="logo">
+      <a routerLink="/">
+        <span class="logo-icon">✓</span>
+        <span class="logo-text">Todo List</span>
+      </a>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="nav">
+      @if (isLoggedIn()) {
+        <!-- Menu pour utilisateur connecté -->
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+          Accueil
+        </a>
+        <a routerLink="/todos" routerLinkActive="active" class="nav-link">
+          Mes Todos
+        </a>
+        
+        <!-- Informations utilisateur -->
+        <div class="user-info">
+          <span class="username">{{ currentUser()?.username }}</span>
+          <button class="btn-logout" (click)="logout()">
+            Déconnexion
+          </button>
+        </div>
+      } @else {
+        <!-- Menu pour utilisateur non connecté -->
+        <a routerLink="/login" routerLinkActive="active" class="nav-link">
+          Connexion
+        </a>
+        <a routerLink="/register" routerLinkActive="active" class="nav-link btn-register">
+          S'inscrire
+        </a>
+      }
+    </nav>
+  </div>
+</header>

@@ -1,1 +1,122 @@
-<p>register-component works!</p>
+<div class="register-container">
+  <div class="register-card">
+    <h1>Inscription</h1>
+    <p class="subtitle">Créez votre compte</p>
+
+    <!-- Message d'erreur -->
+    @if (errorMessage()) {
+      <div class="error-message">
+        {{ errorMessage() }}
+      </div>
+    }
+
+    <!-- Formulaire d'inscription -->
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <!-- Nom d'utilisateur -->
+      <div class="form-group">
+        <label for="username">Nom d'utilisateur</label>
+        <input 
+          type="text" 
+          id="username" 
+          formControlName="username"
+          placeholder="John Doe"
+          [class.invalid]="username?.invalid && username?.touched"
+        />
+        @if (username?.invalid && username?.touched) {
+          <div class="field-error">
+            @if (username?.errors?.['required']) {
+              <span>Le nom d'utilisateur est requis</span>
+            }
+            @if (username?.errors?.['minlength']) {
+              <span>Le nom d'utilisateur doit contenir au moins 3 caractères</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label for="email">Email</label>
+        <input 
+          type="email" 
+          id="email" 
+          formControlName="email"
+          placeholder="votre@email.com"
+          [class.invalid]="email?.invalid && email?.touched"
+        />
+        @if (email?.invalid && email?.touched) {
+          <div class="field-error">
+            @if (email?.errors?.['required']) {
+              <span>L'email est requis</span>
+            }
+            @if (email?.errors?.['email']) {
+              <span>Format d'email invalide</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Mot de passe -->
+      <div class="form-group">
+        <label for="password">Mot de passe</label>
+        <input 
+          type="password" 
+          id="password" 
+          formControlName="password"
+          placeholder="••••••••"
+          [class.invalid]="password?.invalid && password?.touched"
+        />
+        @if (password?.invalid && password?.touched) {
+          <div class="field-error">
+            @if (password?.errors?.['required']) {
+              <span>Le mot de passe est requis</span>
+            }
+            @if (password?.errors?.['minlength']) {
+              <span>Le mot de passe doit contenir au moins 6 caractères</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Confirmation mot de passe -->
+      <div class="form-group">
+        <label for="confirmPassword">Confirmer le mot de passe</label>
+        <input 
+          type="password" 
+          id="confirmPassword" 
+          formControlName="confirmPassword"
+          placeholder="••••••••"
+          [class.invalid]="confirmPassword?.invalid && confirmPassword?.touched"
+        />
+        @if (confirmPassword?.invalid && confirmPassword?.touched) {
+          <div class="field-error">
+            @if (confirmPassword?.errors?.['required']) {
+              <span>Veuillez confirmer votre mot de passe</span>
+            }
+            @if (confirmPassword?.errors?.['passwordMismatch']) {
+              <span>Les mots de passe ne correspondent pas</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Bouton de soumission -->
+      <button 
+        type="submit" 
+        class="btn-primary"
+        [disabled]="isLoading()"
+      >
+        @if (isLoading()) {
+          <span>Inscription en cours...</span>
+        } @else {
+          <span>S'inscrire</span>
+        }
+      </button>
+    </form>
+
+    <!-- Lien vers la connexion -->
+    <div class="footer-link">
+      <p>Déjà un compte ? <a routerLink="/login">Se connecter</a></p>
+    </div>
+  </div>
+</div>
