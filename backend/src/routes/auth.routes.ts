@@ -71,13 +71,22 @@ export default async function authRoutes(fastify: FastifyInstance) {
         username: newUser.username
       });
 
+      // Placer le token dans un cookie HTTP-only sécurisé
+      reply.setCookie('token', token, {
+        httpOnly: true,  // Pas accessible en JavaScript (protection XSS)
+        secure: process.env.NODE_ENV === 'production',  // HTTPS uniquement en production
+        sameSite: 'lax',  // Protection CSRF (lax pour permettre navigation)
+        maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 jours
+        path: '/'
+      });
+
       return reply.status(201).send({
         message: 'Utilisateur créé avec succès',
         user: {
           email: newUser.email,
           username: newUser.username
-        },
-        token  // ← JWT TOKEN
+        }
+        // Plus de token dans le body !
       });
 
     } catch (error) {
@@ -128,19 +137,74 @@ export default async function authRoutes(fastify: FastifyInstance) {
         username: user.username
       });
 
+      // Placer le token dans un cookie HTTP-only sécurisé
+      reply.setCookie('token', token, {
+        httpOnly: true,  // Pas accessible en JavaScript (protection XSS)
+        secure: process.env.NODE_ENV === 'production',  // HTTPS uniquement en production
+        sameSite: 'lax',  // Protection CSRF (lax pour permettre navigation)
+        maxAge: 7 * 24 * 60 * 60 * 1000,  // 7 jours
+        path: '/'
+      });
+
       return reply.status(200).send({
         message: 'Connexion réussie',
         user: {
           email: user.email,
           username: user.username
-        },
-        token  // ← JWT TOKEN
+        }
+        // Plus de token dans le body !
       });
 
     } catch (error) {
       fastify.log.error(error);
       return reply.status(500).send({
         error: 'Erreur lors de la connexion'
+      });
+    }
+  });
+
+  /**
+   * POST /api/auth/logout
+   * Déconnexion : supprime le cookie d'authentification
+   */
+  fastify.post('/logout', async (request, reply) => {
+    try {
+      // Supprimer le cookie en le définissant avec maxAge = 0
+      reply.clearCookie('token', {
+        path: '/'
+      });
+
+      return reply.status(200).send({
+        message: 'Déconnexion réussie'
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Erreur lors de la déconnexion'
+      });
+    }
+  });
+
+  /**
+   * GET /api/auth/me
+   * 🔒 PROTÉGÉE - Récupère l'utilisateur actuellement authentifié
+   * Permet au frontend de vérifier l'authentification sans décoder le JWT
+   */
+  fastify.get('/me', {
+    onRequest: [fastify.authenticate]
+  }, async (request, reply) => {
+    try {
+      // Le user est disponible après l'authentification
+      return reply.status(200).send({
+        user: {
+          email: request.user.email,
+          username: request.user.username
+        }
+      });
+    } catch (error) {
+      fastify.log.error(error);
+      return reply.status(500).send({
+        error: 'Erreur lors de la récupération de l\'utilisateur'
       });
     }
   });

@@ -1,6 +1,7 @@
 import Fastify from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import cookie from '@fastify/cookie';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
 import authRoutes from './routes/auth.routes';
@@ -15,9 +16,16 @@ const fastify = Fastify({
     logger: true // logger: true permet de voir les requêtes HTTP dans la console
 });
 
+// Configuration CORS avec support des credentials (cookies)
 fastify.register(cors, {
-    origin: true,    // @TODO AUTORISE TOUTES LES ORIGINES, à changer une fois en prod
-    credentials: true
+    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    credentials: true // Permet l'envoi des cookies cross-origin
+});
+
+// Configuration du plugin cookie
+fastify.register(cookie, {
+    secret: process.env.JWT_SECRET || 'your-super-secret-cookie-key',
+    parseOptions: {} // Options pour parser les cookies
 });
 
 // Configuration JWT
@@ -25,10 +33,6 @@ fastify.register(cors, {
 fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'your-super-secret-key-change-this-in-production'
 });
-
-// ========================================
-// DÉCORATEURS (pour TypeScript)
-// ========================================
 
 // Ajoute les types pour JWT dans Fastify
 declare module 'fastify' {
@@ -44,12 +48,21 @@ declare module 'fastify' {
 }
 
 // Middleware d'authentification
-// Vérifie que le token JWT est valide
+// Vérifie que le token JWT est valide depuis le cookie HTTP-only
 fastify.decorate('authenticate', async (request: any, reply: any) => {
     try {
-        await request.jwtVerify();
+        // Récupérer le token depuis le cookie au lieu du header Authorization
+        const token = request.cookies.token;
+        
+        if (!token) {
+            return reply.status(401).send({ error: 'Non authentifié - cookie manquant' });
+        }
+        
+        // Vérifier le token JWT
+        const decoded = await fastify.jwt.verify(token);
+        request.user = decoded;
     } catch (err) {
-        reply.status(401).send({ error: 'Token invalide ou manquant' });
+        reply.status(401).send({ error: 'Token invalide ou expiré' });
     }
 });
 
@@ -88,8 +101,10 @@ const start = async () => {
         console.log('\n📋 Routes disponibles:');
         console.log('  GET    /health');
         console.log('  GET    /');
-        console.log('  POST   /api/auth/register');
-        console.log('  POST   /api/auth/login (+ JWT)');
+        console.log('  POST   /api/auth/register (→ cookie)');
+        console.log('  POST   /api/auth/login (→ cookie)');
+        console.log('  POST   /api/auth/logout');
+        console.log('  GET    /api/auth/me (🔒 protégée)');
         console.log('  GET    /api/todos (🔒 protégée)');
         console.log('  POST   /api/todos (🔒 protégée)');
         console.log('  PUT    /api/todos/:id (🔒 protégée)');
