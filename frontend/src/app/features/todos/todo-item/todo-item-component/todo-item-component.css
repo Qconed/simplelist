@@ -1,0 +1,140 @@
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: white;
+  border-radius: 8px;
+  border: 2px solid #e0e0e0;
+  transition: all 0.3s ease;
+  margin-bottom: 12px;
+}
+
+.todo-item:hover {
+  border-color: #667eea;
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.1);
+}
+
+.todo-item.completed {
+  opacity: 0.7;
+  background: #f9f9f9;
+}
+
+.todo-item.completed .todo-description {
+  text-decoration: line-through;
+  color: #999;
+}
+
+/* Checkbox personnalisé */
+.todo-checkbox {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.todo-checkbox input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  cursor: pointer;
+  height: 0;
+  width: 0;
+}
+
+.checkbox-label {
+  cursor: pointer;
+  display: block;
+  position: relative;
+}
+
+.checkmark {
+  display: block;
+  width: 24px;
+  height: 24px;
+  border: 2px solid #667eea;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.todo-checkbox input:checked ~ .checkbox-label .checkmark {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-color: #667eea;
+}
+
+.todo-checkbox input:checked ~ .checkbox-label .checkmark::after {
+  content: '';
+  position: absolute;
+  left: 7px;
+  top: 3px;
+  width: 6px;
+  height: 11px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+
+/* Contenu */
+.todo-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.todo-description {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 500;
+  color: #333;
+  word-wrap: break-word;
+}
+
+.todo-date {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #666;
+}
+
+.todo-date svg {
+  flex-shrink: 0;
+}
+
+/* Actions */
+.todo-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.btn-delete {
+  background: transparent;
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  cursor: pointer;
+  color: #999;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-delete:hover {
+  background: #fee;
+  color: #c33;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .todo-item {
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .todo-description {
+    font-size: 14px;
+  }
+
+  .todo-date {
+    font-size: 12px;
+  }
+}

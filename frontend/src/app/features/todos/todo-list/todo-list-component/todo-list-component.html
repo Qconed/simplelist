@@ -1,1 +1,93 @@
-<p>todo-list-component works!</p>
+<div class="todo-list-container">
+  <!-- Header -->
+  <div class="header">
+    <h1>Mes Tâches</h1>
+    <div class="stats">
+      <span class="stat">
+        <strong>{{ stats().total }}</strong> total
+      </span>
+      <span class="stat">
+        <strong>{{ stats().active }}</strong> en cours
+      </span>
+      <span class="stat">
+        <strong>{{ stats().completed }}</strong> terminées
+      </span>
+    </div>
+  </div>
+
+  <!-- Formulaire d'ajout -->
+  <app-todo-form (addTodo)="onAddTodo($event)"></app-todo-form>
+
+  <!-- Message d'erreur -->
+  @if (errorMessage()) {
+    <div class="error-message">
+      {{ errorMessage() }}
+      <button class="btn-retry" (click)="loadTodos()">Réessayer</button>
+    </div>
+  }
+
+  <!-- Filtres -->
+  <div class="filters">
+    <button 
+      class="filter-btn"
+      [class.active]="filter() === 'all'"
+      (click)="setFilter('all')"
+    >
+      Toutes
+    </button>
+    <button 
+      class="filter-btn"
+      [class.active]="filter() === 'active'"
+      (click)="setFilter('active')"
+    >
+      En cours
+    </button>
+    <button 
+      class="filter-btn"
+      [class.active]="filter() === 'completed'"
+      (click)="setFilter('completed')"
+    >
+      Terminées
+    </button>
+  </div>
+
+  <!-- Liste des todos -->
+  <div class="todos-wrapper">
+    @if (isLoading()) {
+      <!-- Chargement -->
+      <div class="loading">
+        <div class="spinner"></div>
+        <p>Chargement des tâches...</p>
+      </div>
+    } @else if (filteredTodos().length === 0) {
+      <!-- Liste vide -->
+      <div class="empty-state">
+        @if (filter() === 'all') {
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+            <path d="M9 11l3 3L22 4"></path>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+          <h3>Aucune tâche</h3>
+          <p>Commencez par ajouter votre première tâche !</p>
+        } @else if (filter() === 'active') {
+          <h3>Aucune tâche en cours</h3>
+          <p>Toutes vos tâches sont terminées ! 🎉</p>
+        } @else {
+          <h3>Aucune tâche terminée</h3>
+          <p>Commencez à cocher vos tâches !</p>
+        }
+      </div>
+    } @else {
+      <!-- Liste des todos -->
+      <div class="todos-list">
+        @for (todo of filteredTodos(); track todo.id) {
+          <app-todo-item
+            [todo]="todo"
+            (toggleTodo)="onToggleTodo($event)"
+            (deleteTodo)="onDeleteTodo($event)"
+          ></app-todo-item>
+        }
+      </div>
+    }
+  </div>
+</div>

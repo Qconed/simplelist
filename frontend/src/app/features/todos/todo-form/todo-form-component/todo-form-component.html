@@ -1,1 +1,51 @@
-<p>todo-form-component works!</p>
+<div class="todo-form-container">
+  <h2>Ajouter une tâche</h2>
+  
+  <form [formGroup]="todoForm" (ngSubmit)="onSubmit()">
+    <div class="form-row">
+      <!-- Champ description -->
+      <div class="form-group flex-grow">
+        <input 
+          type="text" 
+          id="description" 
+          formControlName="description"
+          placeholder="Que devez-vous faire ?"
+          [class.invalid]="description?.invalid && description?.touched"
+        />
+        @if (description?.invalid && description?.touched) {
+          <div class="field-error">
+            @if (description?.errors?.['required']) {
+              <span>La description est requise</span>
+            }
+            @if (description?.errors?.['minlength']) {
+              <span>La description doit contenir au moins 3 caractères</span>
+            }
+          </div>
+        }
+      </div>
+
+      <!-- Champ date -->
+      <div class="form-group">
+        <input 
+          type="date" 
+          id="date" 
+          formControlName="date"
+          class="date-input"
+        />
+      </div>
+
+      <!-- Bouton d'ajout -->
+      <button 
+        type="submit" 
+        class="btn-add"
+        [disabled]="todoForm.invalid"
+      >
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="12" y1="5" x2="12" y2="19"></line>
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+        </svg>
+        Ajouter
+      </button>
+    </div>
+  </form>
+</div>
