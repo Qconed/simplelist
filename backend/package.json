@@ -2,11 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "Backend of the To Do List Application",
+  "type": "module",
   "main": "server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
-    "start": "node dist/src/server.js",
+    "start": "node dist/server.js",
     "prisma:generate": "prisma generate",
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio"

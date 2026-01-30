@@ -4,8 +4,8 @@ import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
 import { PrismaClient } from '@prisma/client';
 import 'dotenv/config';
-import authRoutes from './routes/auth.routes';
-import todoRoutes from './routes/todo.routes';
+import authRoutes from './routes/auth.routes.js';
+import todoRoutes from './routes/todo.routes.js';
 
 const prisma = new PrismaClient();
 
@@ -34,19 +34,6 @@ fastify.register(cookie, {
 fastify.register(jwt, {
     secret: process.env.JWT_SECRET || 'your-super-secret-key-change-this-in-production'
 });
-
-// Ajoute les types pour JWT dans Fastify
-declare module 'fastify' {
-    interface FastifyInstance {
-        authenticate: any;
-    }
-    interface FastifyRequest {
-        user: {
-            email: string;
-            username: string;
-        };
-    }
-}
 
 // Middleware d'authentification
 // Vérifie que le token JWT est valide depuis le cookie HTTP-only
