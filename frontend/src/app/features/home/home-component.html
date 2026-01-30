@@ -2,7 +2,7 @@
     @if (isLoggedIn()) {
     <!-- Utilisateur connecté -->
     <div class="welcome-section">
-        <h1>Bienvenue, {{ currentUser()?.username }} ! 👋</h1>
+        <h1>Bienvenue, {{ currentUser()?.username }} !</h1>
         <p class="subtitle">Gérez vos tâches facilement avec notre application Todo List</p>
         
         <div class="action-cards">
@@ -11,25 +11,19 @@
             <h3>Mes Todos</h3>
             <p>Voir et gérer toutes mes tâches</p>
         </a>
-        
-        <div class="action-card info-card">
-            <div class="card-icon">✨</div>
-            <h3>Astuces</h3>
-            <p>Organisez vos tâches par priorité pour être plus productif</p>
-        </div>
         </div>
     </div>
     } @else {
     <!-- Utilisateur non connecté -->
     <div class="landing-section">
-        <h1>Bienvenue sur Todo List ! ✅</h1>
-        <p class="subtitle">Organisez vos tâches simplement et efficacement</p>
+        <h1>Bienvenue sur Simple Todo List !</h1>
+        <p class="subtitle">Organisez vos tâches, retrouvez la liberté de penser</p>
         
         <div class="features">
         <div class="feature">
             <span class="feature-icon">🔒</span>
             <h3>Sécurisé</h3>
-            <p>Vos données sont protégées avec des cookies HTTP-only</p>
+            <p>Vos données sont protégées avec des cookies HTTP-only (PAS dans localstorage ❌)</p>
         </div>
         
         <div class="feature">

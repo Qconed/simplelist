@@ -108,10 +108,6 @@ export class TodoListComponent implements OnInit {
    * Supprimer un todo
    */
   onDeleteTodo(todoId: number): void {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
-      return;
-    }
-
     this.todoService.deleteTodo(todoId).subscribe({
       next: () => {
         // Retirer le todo de la liste

@@ -20,9 +20,9 @@ export const jwtInterceptor: HttpInterceptorFn = (req, next) => {
 
   return next(clonedRequest).pipe(
     catchError((error) => {
-      // Si erreur 401 (non authentifié), rediriger vers la page de login
+      // Si erreur 401 (non authentifié), rediriger vers la page maison
       if (error.status === 401) {
-        router.navigate(['/login']);
+        router.navigate(['/']);
       }
       
       return throwError(() => error);
