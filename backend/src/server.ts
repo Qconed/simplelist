@@ -18,7 +18,7 @@ const fastify = Fastify({
 
 // Configuration CORS avec support des credentials (cookies)
 fastify.register(cors, {
-    origin: process.env.FRONTEND_URL || 'http://localhost:4200',
+    origin: process.env.FRONTEND_URL || 'http://proxyberry.local:4200',
     credentials: true, // Permet l'envoi des cookies cross-origin
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'] // Méthodes HTTP autorisées
 });
