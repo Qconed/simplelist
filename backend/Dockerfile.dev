@@ -1,0 +1,27 @@
+# Dockerfile for development purpose (not prod) with code hot-reload
+# source code is mounted as volume for hot reload
+
+
+# Base image, full and not alpine for dev conveience (with debug tools)
+FROM node:18
+
+WORKDIR /app
+
+# Copy package and package-lock files to compile code and download dependcies
+COPY package*.json ./
+
+# Install ALL dependencies (including devDependencies)
+# We need devDependencies for development (tsx, typescript, etc.)
+RUN npm ci --include=dev
+
+# Copy the rest of the application source
+# Note: In development, this will be overridden by volume mount
+# But we need it for the initial container setup (especially prisma)
+COPY . .
+
+RUN npm run prisma:generate
+
+EXPOSE 3000
+
+# Use dev command, for hot reloading to restart the server when files change
+CMD ["npm", "run", "dev"]
