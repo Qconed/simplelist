@@ -15,9 +15,10 @@ COPY package*.json ./
 RUN npm ci --include=dev
 
 # Copy the rest of the application source
-# Note: In development, this will be overridden by volume mount
 # But we need it for the initial container setup (especially prisma)
-COPY . .
+COPY ./prisma ./prisma
+COPY package*.json ./
+COPY tsconfig.json ./
 
 RUN npm run prisma:generate
 

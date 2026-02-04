@@ -6,6 +6,8 @@
   "main": "server.ts",
   "scripts": {
     "dev": "tsx watch src/server.ts",
+    "dev:docker": "npm run prisma:migrate:deploy && npm run dev",
+    "prisma:migrate:deploy":"prisma migrate deploy",
     "build": "tsc",
     "start": "node dist/server.js",
     "prisma:generate": "prisma generate",

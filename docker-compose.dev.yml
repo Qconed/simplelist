@@ -1,0 +1,141 @@
+networks:
+  todolist-network:
+    driver: bridge # the following services will run and know about each other by container name
+    name: todolist-dev-network
+
+services:
+  postgres: # no need for docker file for this because only need the offical postgres image without tweaks.
+    networks:
+      - todolist-network
+    image: postgres:16-alpine
+    container_name: todolist-postgres
+    restart: unless-stopped
+    ports:
+    - "${DATABASE_EXTERNAL_PORT}:5432" # host DATABASE_EXTERNAL_PORT to container port 5432
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - todolist_data:/var/lib/postgresql/data
+    env_file:
+      - ./.env
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: todolist-backend-dev
+    restart: unless-stopped
+    ports:
+      - 3000:3000 # web server: host 3000 to container port 3000
+
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public" # override of the .env file
+      # /!\ the hostname in the URL is the container name of the DB run over the docker network : postgres
+      
+      # Server configuration
+      NODE_ENV: development # enable detailed error messages, stack traces for node
+      PORT: 3000      # listen on the container port 3000
+      HOST: 0.0.0.0   # listen to all network interfaces, required for the docker network config
+
+      # CORS configuration, will have to be updated when frontend is dockerized too
+      # @todo: when updating app to https, will have to change the url
+      FRONTEND_URL: "http://localhost:4200"
+
+      JWT_SECRET: ${JWT_SECRET}
+    env_file:
+      - ./.env
+    volumes:
+      # avoid mounting the current directory, and choose to fine grain the things to mount
+      # => avoid crushing filesystem created during build
+      
+      # MOUNTS
+      # using :cached for the dev compose, to allow for slow latency because of reading the host machine files. (optimization mostly for windows/mac because of running in VM)
+      # because in dev version of container, mount the src code for hot reload
+      - ./backend/src:/app/src:cached # mount the local host ./src folder to the container /app/src folder
+      - ./backend/prisma:/app/prisma:cached
+      - ./backend/package.json:/app/package.json:cached # grabbing the rest of the config files for the server to launch properly
+      - ./backend/package-lock.json:/app/package-lock.json:cached
+      - ./backend/tsconfig.json:/app/tsconfig.json:cached
+      
+      # PERSISTANCE VOLUMES
+      - backend_node_modules:/app/node_modules # to ensure between builds the dependencies are the same
+    
+      # ANONYMOUS VOLUMES
+      - /app/dist
+      # the dockerignore allows to ignore the local host dist/folder. But this ENSURES 
+      # that the /app/dist folder is container only, with NO SYNC to the local host machine (relevant if mounted for example the current directory ".", but added as safety)
+    depends_on:
+      - postgres # requires the postgres container to be up and running to work
+    networks:
+      - todolist-network
+    command: ["npm", "run", "dev:docker"] # override of the dockerfile command to also migrate the db changes to volume
+
+    # use the container in an interactive terminal (terminal colors + allow standard input)
+    tty: true
+    stdin_open: true
+  prisma-studio: # added the studio as a separate service for separation of responsibility
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: todolist-prisma-studio
+    restart: unless-stopped
+    ports: 
+      - "5555:5555"
+    environment:
+      DATABASE_URL: "postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?schema=public"
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend/prisma:/app/prisma:cached
+    depends_on:
+      - postgres
+    networks:
+      - todolist-network
+    command: ["npx", "prisma", "studio", "--port", "5555", "--hostname", "0.0.0.0"]
+    tty: true
+    stdin_open: true
+
+
+# ================= FRONTEND
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: todolist-frontend-dev
+    restart: unless-stopped
+    ports:
+      - "4200:4200" # web frontend server exposed on external port 4200 from internal container port 4200
+    environment:
+      NODE_ENV: development
+    volumes:
+      # Mounts
+      - ./frontend/public:/app/public:cached
+      - ./frontend/src:/app/src:cached
+      - ./frontend/angular.json:/app/angular.json:cached
+      - ./frontend/package-lock.json:/app/package-lock.json:cached
+      - ./frontend/package.json:/app/package.json:cached
+      - ./frontend/tsconfig.app.json:/app/tsconfig.app.json:cached
+      - ./frontend/tsconfig.json:/app/tsconfig.json:cached
+      - ./frontend/tsconfig.spec.json:/app/tsconfig.spec.json:cached
+      
+      # Persistance
+      - frontend_node_modules:/app/node_modules
+
+      # Exclusion (isolation of container files from host machine)
+      # No need to create those files on host, because they are only required at build time IN the container
+      - /app/.angular
+    networks:
+      - todolist-network
+    command: ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200"]
+    tty: true
+    stdin_open: true
+
+volumes:
+  todolist_data:  
+  backend_node_modules: # improve performance by allowing to reuse dependencies between runs
+    name: todolist-backend-node-modules-dev
+  frontend_node_modules:
+    name: todolist-frontend-node-modules-dev
+

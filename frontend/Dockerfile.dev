@@ -1,0 +1,16 @@
+# Frontend Dockerfile - DEV
+
+FROM node:20
+
+WORKDIR /app
+
+COPY package*.json .
+
+RUN npm ci --include=dev
+
+COPY . .
+
+EXPOSE 4200
+
+# set host as 0.0.0.0 to plan for the docker bridge network and make the server reachable 
+CMD ["npx", "ng", "serve", "--host", "0.0.0.0", "--port", "4200"] 
